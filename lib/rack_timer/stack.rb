@@ -21,9 +21,9 @@ module ActionDispatch
 
       def incoming_timestamp(env)
         if env.has_key?("MIDDLEWARE_TIMESTAMP") # skip over the first middleware
-          elapsed_time = (Time.now.to_f - env["MIDDLEWARE_TIMESTAMP"][1].to_f) * 1000 
+          elapsed_time = (Time.now.to_f - env["MIDDLEWARE_TIMESTAMP"][1].to_f) * 1000
           if elapsed_time > LogThreshold # only log if took greater than LogThreshold
-            Rails.logger.info "Rack Timer (incoming) -- #{env["MIDDLEWARE_TIMESTAMP"][0]}: #{elapsed_time} ms"
+            Rails.logger.warn "Rack Timer (incoming) -- #{env["MIDDLEWARE_TIMESTAMP"][0]}: #{elapsed_time} ms"
           end
         elsif env.has_key?("HTTP_X_REQUEST_START") or env.has_key?("HTTP_X_QUEUE_START")
           # if we are tracking request queuing time via New Relic's suggested header(s),
@@ -31,7 +31,7 @@ module ActionDispatch
           # between Time.now from the start of the first piece of middleware
           # prefer HTTP_X_QUEUE_START over HTTP_X_REQUEST_START in case both exist
           queue_start_time = (env["HTTP_X_QUEUE_START"] || env["HTTP_X_REQUEST_START"]).gsub("t=", "").to_i
-          Rails.logger.info "Rack Timer -- Queuing time: #{(Time.now.to_f * 1000000).to_i - queue_start_time} microseconds"
+          Rails.logger.warn "Rack Timer -- Queuing time: #{(Time.now.to_f * 1000000).to_i - queue_start_time} microseconds"
         end
         env["MIDDLEWARE_TIMESTAMP"] = [@app.class.to_s, Time.now]
         env
@@ -44,9 +44,9 @@ module ActionDispatch
             if env["MIDDLEWARE_TIMESTAMP"][0] and env["MIDDLEWARE_TIMESTAMP"][0] == @app.class.to_s
               # this is the actual elapsed time of the final piece of Middleware (typically routing) AND the actual
               # application's action
-              Rails.logger.info "Rack Timer (Application Action) -- #{@app.class.to_s}: #{elapsed_time} ms"              
+              Rails.logger.warn "Rack Timer (Application Action) -- #{@app.class.to_s}: #{elapsed_time} ms"
             else
-              Rails.logger.info "Rack Timer (outgoing) -- #{@app.class.to_s}: #{elapsed_time} ms"
+              Rails.logger.warn "Rack Timer (outgoing) -- #{@app.class.to_s}: #{elapsed_time} ms"
             end
           end
         end
@@ -61,7 +61,7 @@ module ActionDispatch
       # overrding the built-in Middleware.build and adding a RackTimer wrapper class
       def build(app)
         RackTimer.new(klass.new(app, *args, &block))
-      end    
+      end
 
     end
 
