@@ -70,7 +70,7 @@ module ActionDispatch
     def build(app = nil, &block)
       app ||= block
       raise "MiddlewareStack#build requires an app" unless app
-      reverse.inject(RackTimer.new(app)) { |a, e| e.build(a) }
+      middlewares.freeze.reverse.inject(RackTimer.new(app)) { |a, e| e.build(a) }
     end
 
   end
